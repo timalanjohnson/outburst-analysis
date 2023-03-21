@@ -1,5 +1,5 @@
 # Outburst Analysis
-<sub>_Authored by Timothy Johnson and Sumari Faul_</sub>
+<sub>_Authored by Timothy Johnson & Sumari Faul_</sub>
 
 This script processes outburst data into a list of outbursts, a list of upper limits of the outbursts, a list of lower limits of the outbursts, and the time between the outbursts' peak magnitudes.
 
