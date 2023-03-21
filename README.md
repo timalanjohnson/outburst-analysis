@@ -18,17 +18,17 @@ To run the script, simply run it with python and pass the path to your .csv file
 $ python main.py example.csv
 ```
 
-If the script ran successfully, it will output
+If the script ran successfully, it will output:
 ```
 OK
 ```
 
-To use the result of the script, you will have to modify the script
+To use the result of the script, you will have to modify the script.
 
 ## Testing
 There are rudimentary tests for the utils functions in the OutburstAnalysis package.
 
-You can run the tests with 
+You can run the tests with:
 ```
 $ python test.py
 ```
