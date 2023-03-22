@@ -22,7 +22,7 @@ def calc_lower_limit(data_points):
     return the time difference between normal the data points around a super outburst
     """
     if len(data_points) <= 3:
-        return "Not enough data points to calculate lower limit"
+        return 0
 
     end_index = len(data_points) - 2
 
