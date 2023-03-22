@@ -48,12 +48,10 @@ def test_calc_upper_limit():
 def test_calc_lower_limit():
     data_points = [{"time": 10}, {"time": 11}, {"time": 12}]
 
-    assert (
-        utils.calc_lower_limit(data_points)
-        == "Not enough data points to calculate lower limit"
-    )
+    assert utils.calc_lower_limit(data_points) == 0
 
     data_points = [{"time": 10}, {"time": 11}, {"time": 12}, {"time": 13}, {"time": 14}]
+
     assert utils.calc_lower_limit(data_points) == 13 - 11
 
 
