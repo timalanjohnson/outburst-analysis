@@ -56,24 +56,67 @@ def test_calc_lower_limit():
 
 
 @test_decorator
-def test_filter_data_points():
+def test_filter_data_points_super_outburst():
     data_points = [
+        {"magnitude": 18},
+        {"magnitude": 13.5},
         {"magnitude": 14},
         {"magnitude": 15},
         {"magnitude": 16},
         {"magnitude": 16},
+        {"magnitude": 16.5},
         {"magnitude": 16},
         {"magnitude": 17},
         {"magnitude": 18},
+        {"magnitude": 18.5},
+        {"magnitude": 19},
     ]
 
-    assert utils.filter_data_points(
+    assert utils.filter_data_points_super_outburst(
         data_points=data_points, lower_limit=15, upper_limit=17
     ) == [
+        {"magnitude": 18},
+        {"magnitude": 13.5},
         {"magnitude": 14},
         {"magnitude": 15},
         {"magnitude": 17},
         {"magnitude": 18},
+        {"magnitude": 18.5},
+        {"magnitude": 19},
+    ]
+
+@test_decorator
+def test_filter_data_points_outburst():
+    data_points = [
+        {"magnitude": 18},
+        {"magnitude": 13.5},
+        {"magnitude": 14},
+        {"magnitude": 15},
+        {"magnitude": 16},
+        {"magnitude": 16},
+        {"magnitude": 16.5},
+        {"magnitude": 16},
+        {"magnitude": 17},
+        {"magnitude": 18},
+        {"magnitude": 18.5},
+        {"magnitude": 19},
+    ]
+
+    filtered = utils.filter_data_points_outburst(
+        data_points=data_points, lower_limit=16, upper_limit=22
+    )
+
+    print(filtered)
+    assert filtered == [
+        {"magnitude": 18},
+        {"magnitude": 16},
+        {"magnitude": 16},
+        {"magnitude": 16.5},
+        {"magnitude": 16},
+        {"magnitude": 17},
+        {"magnitude": 18},
+        {"magnitude": 18.5},
+        {"magnitude": 19},
     ]
 
 
@@ -81,4 +124,5 @@ test_get_next_or_last()
 test_get_peak_magnitude()
 test_calc_upper_limit()
 test_calc_lower_limit()
-test_filter_data_points()
+test_filter_data_points_super_outburst()
+test_filter_data_points_outburst()

@@ -47,7 +47,7 @@ def get_peak_magnitude(data_points):
     return data_points[peak_magnitude_index]
 
 
-def filter_data_points(data_points, lower_limit, upper_limit):
+def filter_data_points_super_outburst(data_points, lower_limit, upper_limit):
     """
     filter out the data points where the magnitude falls between the lower and upper limits
 
@@ -56,6 +56,15 @@ def filter_data_points(data_points, lower_limit, upper_limit):
     filtered_data_points = []
     for point in data_points:
         if point["magnitude"] <= lower_limit or point["magnitude"] >= upper_limit:
+            filtered_data_points.append(point)
+
+    return filtered_data_points
+
+
+def filter_data_points_outburst(data_points, lower_limit, upper_limit):
+    filtered_data_points = []
+    for point in data_points:
+        if point["magnitude"] >= lower_limit and point["magnitude"] <= upper_limit:
             filtered_data_points.append(point)
 
     return filtered_data_points
