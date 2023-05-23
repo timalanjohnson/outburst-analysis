@@ -8,14 +8,12 @@ from outburst_analysis.analysis import (
 )
 
 
-data = DataFromCSV("./data/CV_output.csv").meerlicht()
+atlas_and_meerlicht = DataFromCSV("./data/copy.csv").atlas_and_meerlicht()
+SuperOutburstAnalysis(atlas_and_meerlicht, so_boundary=15.42, q_boundary=17.34)
+OutburstAnalysis(atlas_and_meerlicht, l_boundary=15.5, o_boundary=17, q_boundary=22)
 
 
-SuperOutburstAnalysis(data, so_boundary=15.42, q_boundary=17.34)
-OutburstAnalysis(data, l_boundary=15.5, o_boundary=17, q_boundary=22)
-ColourAnalysis(data)
-
-
-data2 = DataFromCSV("./data/copy.csv").atlas_and_meerlicht()
-SuperOutburstAnalysis(data2, so_boundary=15.42, q_boundary=17.34)
-OutburstAnalysis(data2, l_boundary=15.5, o_boundary=17, q_boundary=22)
+meerlicht = DataFromCSV("./data/CV_output.csv").meerlicht()
+SuperOutburstAnalysis(meerlicht, so_boundary=15.42, q_boundary=17.34)
+OutburstAnalysis(meerlicht, l_boundary=15.5, o_boundary=17, q_boundary=22)
+ColourAnalysis(meerlicht)
