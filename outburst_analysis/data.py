@@ -1,9 +1,12 @@
+import numpy as np
+
 class DataPoint:
     def __init__(self, time: float, magnitude: float, error: float, filter: str):
         self.time = time
         self.magnitude = magnitude
         self.error = error
         self.filter = filter
+        self.absolute_magnitude = magnitude + 5 - (5 * np.log10(663.482))
 
 
 class Outburst:
@@ -39,6 +42,7 @@ class UQ:
         self.u = u
         self.q = q
         self.uq = None if u is None else u.magnitude - q.magnitude
+        self.average_time = (u.time + q.time) / 2
 
 
 class QI:
