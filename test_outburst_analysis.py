@@ -1,4 +1,4 @@
-from outburst_analysis import Analysis, DataPoint, calculate_difference
+from outburst_analysis import Analysis, Observation, calculate_difference
 
 
 class TestClassUtils:
@@ -9,7 +9,7 @@ class TestClassUtils:
 
 class TestClassAnalysis:
     def test_analysis_has_data(self):
-        test_data = [DataPoint(22, 33, 44, "f"), DataPoint(55, 66, 77, "g")]
+        test_data = [Observation(22, 33, 44, "f"), Observation(55, 66, 77, "g")]
         analysis = Analysis(test_data)
 
         assert analysis.data == test_data

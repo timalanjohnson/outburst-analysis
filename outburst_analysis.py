@@ -1,6 +1,6 @@
 import numpy as np
 
-class DataPoint:
+class Observation:
     def __init__(self, time: float, magnitude: float, error: float, filter: str):
         self.time = time
         self.magnitude = magnitude
@@ -9,11 +9,46 @@ class DataPoint:
         self.absolute_magnitude = magnitude + 5 - (5 * np.log10(663.482))
 
 
+class Star:
+    def __init__(
+        self,
+        distance,
+        q_magnitude,
+        q_magnitude_error,
+        u_magnitude,
+        u_magnitude_error,
+        i_magnitude,
+        i_magnitude_error,
+        parallax_angle,
+    ):
+        self.distance = distance
+        self.q_magnitude = q_magnitude
+        self.q_magnitude_error = q_magnitude_error
+        self.u_magnitude = u_magnitude
+        self.u_magnitude_error = u_magnitude_error
+        self.i_magnitude = i_magnitude
+        self.i_magnitude_error = i_magnitude_error
+        self.parallax_angle = parallax_angle
+        self.absolute_magnitude = q_magnitude + 5 - (5 * np.log10(distance))
+        self.uq = None if u_magnitude is None else u_magnitude - q_magnitude
+        self.qi = None if i_magnitude is None else q_magnitude - i_magnitude
+
+
+class StarAnalysis:
+    def __init__(self, data: list[Star]):
+        self.data = data
+
+        self.run()
+
+    def run(self):
+        self.result = [star for star in self.data if star.parallax_angle < 0.2]
+
+
 class Outburst:
     def __init__(
         self,
-        data: list[DataPoint],
-        peak_magnitude: list[DataPoint],
+        data: list[Observation],
+        peak_magnitude: list[Observation],
         upper_limit: float,
         lower_limit: float,
     ):
@@ -37,16 +72,16 @@ class OutburstAnalysisResult:
         self.time_between_peak_magnitudes = time_between_peak_magnitudes
 
 
-class UQ:
-    def __init__(self, u: DataPoint, q: DataPoint):
+class UQPair:
+    def __init__(self, u: Observation, q: Observation):
         self.u = u
         self.q = q
         self.uq = None if u is None else u.magnitude - q.magnitude
         self.average_time = (u.time + q.time) / 2
 
 
-class QI:
-    def __init__(self, q: DataPoint, i: DataPoint):
+class QIPair:
+    def __init__(self, q: Observation, i: Observation):
         self.q = q
         self.i = i
         self.qi = None if i is None else q.magnitude - i.magnitude
@@ -54,7 +89,7 @@ class QI:
 
 
 class ColourAnalysisResult:
-    def __init__(self, uq_points: list[UQ], qi_points: list[QI]):
+    def __init__(self, uq_points: list[UQPair], qi_points: list[QIPair]):
         self.uq_points = uq_points
         self.qi_points = qi_points
 
@@ -64,7 +99,7 @@ class DataFromCSV:
         self.path_to_csv = path_to_csv
 
     def atlas_and_meerlicht(self):
-        data: list[DataPoint] = []
+        data: list[Observation] = []
 
         with open(self.path_to_csv, "r") as file:
             next(file)
@@ -75,12 +110,14 @@ class DataFromCSV:
                 magnitude = columns[1]
                 error = columns[2]
 
-                data.append(DataPoint(float(time), float(magnitude), float(error), ""))
+                data.append(
+                    Observation(float(time), float(magnitude), float(error), "")
+                )
 
         return data
 
     def meerlicht(self):
-        data: list[DataPoint] = []
+        data: list[Observation] = []
 
         with open(self.path_to_csv, "r") as file:
             next(file)
@@ -93,7 +130,7 @@ class DataFromCSV:
                 filter = columns[8]
 
                 data.append(
-                    DataPoint(
+                    Observation(
                         float(time),
                         float(magnitude),
                         float(error),
@@ -103,9 +140,41 @@ class DataFromCSV:
 
         return data
 
+    def meerlicht_catalogue(self):
+        data: list[Star] = []
+
+        with open(self.path_to_csv, "r") as file:
+            next(file)
+            for line in file:
+                columns = line.split(",")
+
+                distance = columns[28]
+                q_magnitude = columns[10]
+                q_magnitude_error = columns[11]
+                u_magnitude = columns[2]
+                u_magnitude_error = columns[3]
+                i_magnitude = columns[8]
+                i_magnitude_error = columns[9]
+                parallax_angle = columns[32]
+
+                data.append(
+                    Star(
+                        distance=float(distance),
+                        q_magnitude=float(q_magnitude),
+                        q_magnitude_error=float(q_magnitude_error),
+                        u_magnitude=float(u_magnitude),
+                        u_magnitude_error=float(u_magnitude_error),
+                        i_magnitude=float(i_magnitude),
+                        i_magnitude_error=float(i_magnitude_error),
+                        parallax_angle=float(parallax_angle),
+                    )
+                )
+
+        return data
+
 
 class Analysis:
-    def __init__(self, data: list[DataPoint]):
+    def __init__(self, data: list[Observation]):
         self.data = data
 
     def _start(self):
@@ -116,15 +185,15 @@ class Analysis:
 
 
 class ColourAnalysis(Analysis):
-    def __init__(self, data: list[DataPoint]):
+    def __init__(self, data: list[Observation]):
         super().__init__(data)
         self._setup()
         self.run()
 
     def _setup(self):
         self.result: ColourAnalysisResult = None
-        self.uq_points: list[UQ] = []
-        self.qi_points: list[QI] = []
+        self.uq_points: list[UQPair] = []
+        self.qi_points: list[QIPair] = []
 
     def _find_nearest_point(self, index, target_filter, time):
         index_offset = 10
@@ -142,7 +211,7 @@ class ColourAnalysis(Analysis):
                 break
 
             if point.filter == target_filter:
-                difference = calculate_difference(index_offset, i)
+                difference = Utils.calculate_difference(index_offset, i)
                 if nearest_difference is None or difference < nearest_difference:
                     nearest_difference = difference
                     nearest_point = point
@@ -156,11 +225,11 @@ class ColourAnalysis(Analysis):
 
                 u = self._find_nearest_point(index, "u", q.time)
                 if u is not None:
-                    self.uq_points.append(UQ(u, q))
+                    self.uq_points.append(UQPair(u, q))
 
                 i = self._find_nearest_point(index, "i", q.time)
                 if i is not None:
-                    self.qi_points.append(QI(q, i))
+                    self.qi_points.append(QIPair(q, i))
 
     def run(self):
         self._start()
@@ -182,7 +251,7 @@ class OutburstAnalysis(Analysis):
         self.run()
 
     def _setup(self):
-        self.filtered_data: list[DataPoint] = []
+        self.filtered_data: list[Observation] = []
         self.outbursts: list[Outburst] = []
         self.upper_limits = []
         self.lower_limits = []
@@ -193,9 +262,9 @@ class OutburstAnalysis(Analysis):
         self.outbursts.append(
             Outburst(
                 new_outburst_data,
-                get_peak_magnitude(new_outburst_data),
-                calc_upper_limit(new_outburst_data),
-                calc_lower_limit(new_outburst_data),
+                Utils.get_peak_magnitude(new_outburst_data),
+                Utils.calc_upper_limit(new_outburst_data),
+                Utils.calc_lower_limit(new_outburst_data),
             )
         )
 
@@ -209,7 +278,7 @@ class OutburstAnalysis(Analysis):
 
     def _find_time_between_peak_magnitudes(self):
         for i, outburst in enumerate(self.outbursts):
-            next_outburst: Outburst = get_next_or_last(self.outbursts, i)
+            next_outburst: Outburst = Utils.get_next_or_last(self.outbursts, i)
             time = next_outburst.peak_magnitude.time - outburst.peak_magnitude.time
             self.time_between_peak_magnitudes.append(time)
 
@@ -222,13 +291,13 @@ class OutburstAnalysis(Analysis):
                 self.filtered_data.append(point)
 
     def _find_outbursts(self):
-        new_outburst_data: list[DataPoint] = []
+        new_outburst_data: list[Observation] = []
 
         for i, current_point in enumerate(self.filtered_data):
-            previous_point: DataPoint = get_previous_or_first(
+            previous_point: Observation = Utils.get_previous_or_first(
                 self.filtered_data, i
             )
-            next_point: DataPoint = get_next_or_last(self.filtered_data, i)
+            next_point: Observation = Utils.get_next_or_last(self.filtered_data, i)
 
             is_outburst = (
                 current_point.magnitude >= self.l_boundary
@@ -288,13 +357,13 @@ class SuperOutburstAnalysis(OutburstAnalysis):
                 self.filtered_data.append(point)
 
     def _find_outbursts(self):
-        new_outburst_data: list[DataPoint] = []
+        new_outburst_data: list[Observation] = []
 
         for i, current_point in enumerate(self.filtered_data):
-            previous_point: DataPoint = get_previous_or_first(
+            previous_point: Observation = Utils.get_previous_or_first(
                 self.filtered_data, i
             )
-            next_point: DataPoint = get_next_or_last(self.filtered_data, i)
+            next_point: Observation = Utils.get_next_or_last(self.filtered_data, i)
 
             is_outburst = current_point.magnitude <= self.so_boundary
             is_first_outburst = (
@@ -312,65 +381,61 @@ class SuperOutburstAnalysis(OutburstAnalysis):
                 new_outburst_data = []
 
 
-def get_next_or_last(list: list, index=0):
-    """
-    return the next element in a list or last element if at the end of a list
-    """
-    return list[index + 1] if index < len(list) - 1 else list[index]
+class Utils:
+    def get_next_or_last(list: list, index=0):
+        """
+        return the next element in a list or last element if at the end of a list
+        """
+        return list[index + 1] if index < len(list) - 1 else list[index]
 
+    def get_previous_or_first(list: list, index=0):
+        return list[index - 1] if index > 0 else list[index]
 
-def get_previous_or_first(list: list, index=0):
-    return list[index - 1] if index > 0 else list[0]
+    def calc_upper_limit(data_points):
+        """
+        return the timer difference between the last and first data points of a super outburst
+        """
+        end_index = len(data_points) - 1
 
+        start_time = data_points[0].time
+        end_time = data_points[end_index].time
 
-def calc_upper_limit(data_points):
-    """
-    return the timer difference between the last and first data points of a super outburst
-    """
-    end_index = len(data_points) - 1
+        return end_time - start_time
 
-    start_time = data_points[0].time
-    end_time = data_points[end_index].time
+    def calc_lower_limit(data_points):
+        """
+        return the time difference between normal the data points around a super outburst
+        """
+        if len(data_points) <= 3:
+            return 0
 
-    return end_time - start_time
+        end_index = len(data_points) - 2
 
+        start_time = data_points[1].time
+        end_time = data_points[end_index].time
 
-def calc_lower_limit(data_points):
-    """
-    return the time difference between normal the data points around a super outburst
-    """
-    if len(data_points) <= 3:
-        return 0
+        return end_time - start_time
 
-    end_index = len(data_points) - 2
+    def get_peak_magnitude(data_points: list[Observation]):
+        """
+        return the data point of the peak magnitude
+        """
+        peak_magnitude = data_points[0].magnitude
+        peak_magnitude_index = 0
 
-    start_time = data_points[1].time
-    end_time = data_points[end_index].time
+        for index, point in enumerate(data_points):
+            if point.magnitude < peak_magnitude:
+                peak_magnitude = point.magnitude
+                peak_magnitude_index = index
 
-    return end_time - start_time
+        return data_points[peak_magnitude_index]
 
+    def calculate_difference(a, b):
+        difference = 0
 
-def get_peak_magnitude(data_points: list[DataPoint]):
-    """
-    return the data point of the peak magnitude
-    """
-    peak_magnitude = data_points[0].magnitude
-    peak_magnitude_index = 0
+        if a > b:
+            difference = a - b
+        else:
+            difference = b - a
 
-    for index, point in enumerate(data_points):
-        if point.magnitude < peak_magnitude:
-            peak_magnitude = point.magnitude
-            peak_magnitude_index = index
-
-    return data_points[peak_magnitude_index]
-
-
-def calculate_difference(a, b):
-    difference = 0
-
-    if a > b:
-        difference = a - b
-    else:
-        difference = b - a
-
-    return difference
+        return difference
