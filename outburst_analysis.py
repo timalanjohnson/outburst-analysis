@@ -1,5 +1,66 @@
 import numpy as np
 
+
+class FormatData:
+    def atlas_and_meerlicht(path_to_csv: str):
+        data: list[Observation] = []
+
+        with open(path_to_csv, "r") as file:
+            next(file)
+            for line in file:
+                columns = line.split(",")
+                data.append(
+                    Observation(
+                        time=float(columns[0]),
+                        magnitude=float(columns[1]),
+                        error=float(columns[2]),
+                        filter="",
+                    )
+                )
+
+        return data
+
+    def meerlicht(path_to_csv: str):
+        data: list[Observation] = []
+
+        with open(path_to_csv, "r") as file:
+            next(file)
+            for line in file:
+                columns = line.split(",")
+                data.append(
+                    Observation(
+                        time=float(columns[6]),
+                        magnitude=float(columns[17]),
+                        error=float(columns[18]),
+                        filter=str(columns[8]),
+                    )
+                )
+
+        return data
+
+    def meerlicht_catalogue(path_to_csv: str):
+        data: list[Star] = []
+
+        with open(path_to_csv, "r") as file:
+            next(file)
+            for line in file:
+                columns = line.split(",")
+                data.append(
+                    Star(
+                        distance=float(columns[28]),
+                        q_magnitude=float(columns[10]),
+                        q_magnitude_error=float(columns[11]),
+                        u_magnitude=float(columns[2]),
+                        u_magnitude_error=float(columns[3]),
+                        i_magnitude=float(columns[8]),
+                        i_magnitude_error=float(columns[9]),
+                        parallax_angle=float(columns[32]),
+                    )
+                )
+
+        return data
+
+
 class Observation:
     def __init__(self, time: float, magnitude: float, error: float, filter: str):
         self.time = time
@@ -7,41 +68,6 @@ class Observation:
         self.error = error
         self.filter = filter
         self.absolute_magnitude = magnitude + 5 - (5 * np.log10(663.482))
-
-
-class Star:
-    def __init__(
-        self,
-        distance,
-        q_magnitude,
-        q_magnitude_error,
-        u_magnitude,
-        u_magnitude_error,
-        i_magnitude,
-        i_magnitude_error,
-        parallax_angle,
-    ):
-        self.distance = distance
-        self.q_magnitude = q_magnitude
-        self.q_magnitude_error = q_magnitude_error
-        self.u_magnitude = u_magnitude
-        self.u_magnitude_error = u_magnitude_error
-        self.i_magnitude = i_magnitude
-        self.i_magnitude_error = i_magnitude_error
-        self.parallax_angle = parallax_angle
-        self.absolute_magnitude = q_magnitude + 5 - (5 * np.log10(distance))
-        self.uq = None if u_magnitude is None else u_magnitude - q_magnitude
-        self.qi = None if i_magnitude is None else q_magnitude - i_magnitude
-
-
-class StarAnalysis:
-    def __init__(self, data: list[Star]):
-        self.data = data
-
-        self.run()
-
-    def run(self):
-        self.result = [star for star in self.data if star.parallax_angle < 0.2]
 
 
 class Outburst:
@@ -72,178 +98,15 @@ class OutburstAnalysisResult:
         self.time_between_peak_magnitudes = time_between_peak_magnitudes
 
 
-class UQPair:
-    def __init__(self, u: Observation, q: Observation):
-        self.u = u
-        self.q = q
-        self.uq = None if u is None else u.magnitude - q.magnitude
-        self.average_time = (u.time + q.time) / 2
-
-
-class QIPair:
-    def __init__(self, q: Observation, i: Observation):
-        self.q = q
-        self.i = i
-        self.qi = None if i is None else q.magnitude - i.magnitude
-        self.average_time = (i.time + q.time) / 2
-
-
-class ColourAnalysisResult:
-    def __init__(self, uq_points: list[UQPair], qi_points: list[QIPair]):
-        self.uq_points = uq_points
-        self.qi_points = qi_points
-
-
-class DataFromCSV:
-    def __init__(self, path_to_csv: str):
-        self.path_to_csv = path_to_csv
-
-    def atlas_and_meerlicht(self):
-        data: list[Observation] = []
-
-        with open(self.path_to_csv, "r") as file:
-            next(file)
-            for line in file:
-                columns = line.split(",")
-
-                time = columns[0]
-                magnitude = columns[1]
-                error = columns[2]
-
-                data.append(
-                    Observation(float(time), float(magnitude), float(error), "")
-                )
-
-        return data
-
-    def meerlicht(self):
-        data: list[Observation] = []
-
-        with open(self.path_to_csv, "r") as file:
-            next(file)
-            for line in file:
-                columns = line.split(",")
-
-                time = columns[6]
-                magnitude = columns[17]
-                error = columns[18]
-                filter = columns[8]
-
-                data.append(
-                    Observation(
-                        float(time),
-                        float(magnitude),
-                        float(error),
-                        filter,
-                    )
-                )
-
-        return data
-
-    def meerlicht_catalogue(self):
-        data: list[Star] = []
-
-        with open(self.path_to_csv, "r") as file:
-            next(file)
-            for line in file:
-                columns = line.split(",")
-
-                distance = columns[28]
-                q_magnitude = columns[10]
-                q_magnitude_error = columns[11]
-                u_magnitude = columns[2]
-                u_magnitude_error = columns[3]
-                i_magnitude = columns[8]
-                i_magnitude_error = columns[9]
-                parallax_angle = columns[32]
-
-                data.append(
-                    Star(
-                        distance=float(distance),
-                        q_magnitude=float(q_magnitude),
-                        q_magnitude_error=float(q_magnitude_error),
-                        u_magnitude=float(u_magnitude),
-                        u_magnitude_error=float(u_magnitude_error),
-                        i_magnitude=float(i_magnitude),
-                        i_magnitude_error=float(i_magnitude_error),
-                        parallax_angle=float(parallax_angle),
-                    )
-                )
-
-        return data
-
-
-class Analysis:
-    def __init__(self, data: list[Observation]):
+class OutburstAnalysis:
+    def __init__(
+        self,
+        data: list[Observation],
+        l_boundary: float,
+        o_boundary: float,
+        q_boundary: float,
+    ):
         self.data = data
-
-    def _start(self):
-        print("Starting {}".format(self.__class__.__name__))
-
-    def _done(self):
-        print("{} Completed.".format(self.__class__.__name__))
-
-
-class ColourAnalysis(Analysis):
-    def __init__(self, data: list[Observation]):
-        super().__init__(data)
-        self._setup()
-        self.run()
-
-    def _setup(self):
-        self.result: ColourAnalysisResult = None
-        self.uq_points: list[UQPair] = []
-        self.qi_points: list[QIPair] = []
-
-    def _find_nearest_point(self, index, target_filter, time):
-        index_offset = 10
-        time_offset = 0.0083
-        search_index = index - index_offset if index > index_offset else 0
-        time_start = time - time_offset
-        time_end = time + time_offset
-        nearest_point = None
-        nearest_difference = None
-
-        for i, point in enumerate(self.data[search_index:]):
-            if point.time < time_start:
-                continue
-            if point.time > time_end:
-                break
-
-            if point.filter == target_filter:
-                difference = Utils.calculate_difference(index_offset, i)
-                if nearest_difference is None or difference < nearest_difference:
-                    nearest_difference = difference
-                    nearest_point = point
-
-        return nearest_point
-
-    def _analyze(self):
-        for index, point in enumerate(self.data):
-            if point.filter == "q":
-                q = point
-
-                u = self._find_nearest_point(index, "u", q.time)
-                if u is not None:
-                    self.uq_points.append(UQPair(u, q))
-
-                i = self._find_nearest_point(index, "i", q.time)
-                if i is not None:
-                    self.qi_points.append(QIPair(q, i))
-
-    def run(self):
-        self._start()
-        self._analyze()
-        self.result = ColourAnalysisResult(self.uq_points, self.qi_points)
-        print("Number of data points", len(self.data))
-        print("Number of UQ points", len(self.uq_points))
-        print("Number of QI points", len(self.qi_points))
-        self._done()
-
-
-class OutburstAnalysis(Analysis):
-    def __init__(self, data, l_boundary, o_boundary, q_boundary):
-        super().__init__(data)
         self.l_boundary = l_boundary
         self.o_boundary = o_boundary
         self.q_boundary = q_boundary
@@ -317,14 +180,7 @@ class OutburstAnalysis(Analysis):
                 self._append_outburst(new_outburst_data)
                 new_outburst_data = []
 
-    def _done_(self):
-        print("Number of data points:", len(self.data))
-        print("Number of filtered data points:", len(self.filtered_data))
-        print("Number of outbursts:", len(self.outbursts))
-        print("{} Completed.".format(self.__class__.__name__))
-
     def run(self):
-        self._start()
         self._filter_data()
         self._find_outbursts()
         self._find_upper_limits()
@@ -337,11 +193,10 @@ class OutburstAnalysis(Analysis):
             self.time_between_peak_magnitudes,
         )
         print(len(self.outbursts))
-        self._done()
 
 
 class SuperOutburstAnalysis(OutburstAnalysis):
-    def __init__(self, data, so_boundary, q_boundary):
+    def __init__(self, data: list[Observation], so_boundary: float, q_boundary: float):
         self.data = data
         self.so_boundary = so_boundary
         self.q_boundary = q_boundary
@@ -379,6 +234,118 @@ class SuperOutburstAnalysis(OutburstAnalysis):
                 new_outburst_data.append(next_point)
                 self._append_outburst(new_outburst_data)
                 new_outburst_data = []
+
+
+class UQPair:
+    def __init__(self, u: Observation, q: Observation):
+        self.u = u
+        self.q = q
+        self.uq = None if u is None else u.magnitude - q.magnitude
+        self.average_time = (u.time + q.time) / 2
+
+
+class QIPair:
+    def __init__(self, q: Observation, i: Observation):
+        self.q = q
+        self.i = i
+        self.qi = None if i is None else q.magnitude - i.magnitude
+        self.average_time = (i.time + q.time) / 2
+
+
+class ColourAnalysisResult:
+    def __init__(self, uq_points: list[UQPair], qi_points: list[QIPair]):
+        self.uq_points = uq_points
+        self.qi_points = qi_points
+
+
+class ColourAnalysis:
+    def __init__(self, data: list[Observation]):
+        self.data = data
+        self._setup()
+        self.run()
+
+    def _setup(self):
+        self.result: ColourAnalysisResult = None
+        self.uq_points: list[UQPair] = []
+        self.qi_points: list[QIPair] = []
+
+    def _find_nearest_point(self, index, target_filter, time):
+        index_offset = 10
+        time_offset = 0.0083
+        search_index = index - index_offset if index > index_offset else 0
+        time_start = time - time_offset
+        time_end = time + time_offset
+        nearest_point = None
+        nearest_difference = None
+
+        for i, point in enumerate(self.data[search_index:]):
+            if point.time < time_start:
+                continue
+            if point.time > time_end:
+                break
+
+            if point.filter == target_filter:
+                difference = Utils.calculate_difference(index_offset, i)
+                if nearest_difference is None or difference < nearest_difference:
+                    nearest_difference = difference
+                    nearest_point = point
+
+        return nearest_point
+
+    def _analyze(self):
+        for index, point in enumerate(self.data):
+            if point.filter == "q":
+                q = point
+
+                u = self._find_nearest_point(index, "u", q.time)
+                if u is not None:
+                    self.uq_points.append(UQPair(u, q))
+
+                i = self._find_nearest_point(index, "i", q.time)
+                if i is not None:
+                    self.qi_points.append(QIPair(q, i))
+
+    def run(self):
+        self._analyze()
+        self.result = ColourAnalysisResult(self.uq_points, self.qi_points)
+        print("Number of data points", len(self.data))
+        print("Number of UQ points", len(self.uq_points))
+        print("Number of QI points", len(self.qi_points))
+
+
+class Star:
+    def __init__(
+        self,
+        distance,
+        q_magnitude,
+        q_magnitude_error,
+        u_magnitude,
+        u_magnitude_error,
+        i_magnitude,
+        i_magnitude_error,
+        parallax_angle,
+    ):
+        self.distance = distance
+        self.q_magnitude = q_magnitude
+        self.q_magnitude_error = q_magnitude_error
+        self.u_magnitude = u_magnitude
+        self.u_magnitude_error = u_magnitude_error
+        self.i_magnitude = i_magnitude
+        self.i_magnitude_error = i_magnitude_error
+        self.parallax_angle = parallax_angle
+        self.absolute_magnitude = q_magnitude + 5 - (5 * np.log10(distance))
+        self.uq = None if u_magnitude is None else u_magnitude - q_magnitude
+        self.qi = None if i_magnitude is None else q_magnitude - i_magnitude
+
+
+class StarAnalysis:
+    def __init__(self, data: list[Star]):
+        self.data = data
+
+        self.run()
+
+    def run(self):
+        self.result = [star for star in self.data if star.parallax_angle < 0.2]
 
 
 class Utils:
